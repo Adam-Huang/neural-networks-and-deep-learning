@@ -97,7 +97,7 @@ class Network(object):
 
         """
         self.biases = [np.random.randn(y, 1) for y in self.sizes[1:]]
-        self.weights = [np.random.randn(y, x)/np.sqrt(x)
+        self.weights = [np.random.randn(y, x)/np.sqrt(x)##ipynb 2-1:这里，x的取值是30，然后是10，所以sqrt(x)==sqrt(30)==5.4xxx，相当于矩阵整体除于一个数
                         for x, y in zip(self.sizes[:-1], self.sizes[1:])]
 
     def large_weight_initializer(self):
@@ -156,11 +156,11 @@ class Network(object):
         n = len(training_data)
         evaluation_cost, evaluation_accuracy = [], []
         training_cost, training_accuracy = [], []
-        for j in xrange(epochs):
+        for j in range(epochs):
             random.shuffle(training_data)
             mini_batches = [
                 training_data[k:k+mini_batch_size]
-                for k in xrange(0, n, mini_batch_size)]
+                for k in range(0, n, mini_batch_size)]##把数据分为若干份
             for mini_batch in mini_batches:
                 self.update_mini_batch(
                     mini_batch, eta, lmbda, len(training_data))
@@ -195,14 +195,14 @@ class Network(object):
         ``n`` is the total size of the training data set.
 
         """
-        nabla_b = [np.zeros(b.shape) for b in self.biases]
+        nabla_b = [np.zeros(b.shape) for b in self.biases]##nabla_b是个和self.biases形状一样的ndarray
         nabla_w = [np.zeros(w.shape) for w in self.weights]
         for x, y in mini_batch:
-            delta_nabla_b, delta_nabla_w = self.backprop(x, y)
-            nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
-            nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
+            delta_nabla_b, delta_nabla_w = self.backprop(x, y)##返回的是NN中每一个w和b的矩阵
+            nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]##然后累加起来，一会要取均值
+            nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]##这两个语句的作用就是累加，因为是矩阵所以依次累加吧
         self.weights = [(1-eta*(lmbda/n))*w-(eta/len(mini_batch))*nw
-                        for w, nw in zip(self.weights, nabla_w)]
+                        for w, nw in zip(self.weights, nabla_w)]##加了regularization-“(1-eta*(lmbda/n))*w”的修复方法
         self.biases = [b-(eta/len(mini_batch))*nb
                        for b, nb in zip(self.biases, nabla_b)]
 
@@ -223,7 +223,8 @@ class Network(object):
             activation = sigmoid(z)
             activations.append(activation)
         # backward pass
-        delta = (self.cost).delta(zs[-1], activations[-1], y)
+        # 这一步算出来的是w和b都能乘的公共部分
+        delta = (self.cost).delta(zs[-1], activations[-1], y)##可以把类当指针用，传入，调用静态方法，
         nabla_b[-1] = delta
         nabla_w[-1] = np.dot(delta, activations[-2].transpose())
         # Note that the variable l in the loop below is used a little
@@ -232,12 +233,12 @@ class Network(object):
         # second-last layer, and so on.  It's a renumbering of the
         # scheme in the book, used here to take advantage of the fact
         # that Python can use negative indices in lists.
-        for l in xrange(2, self.num_layers):
+        for l in range(2, self.num_layers):##从输出层往前的隐藏层就有规律可循了
             z = zs[-l]
             sp = sigmoid_prime(z)
-            delta = np.dot(self.weights[-l+1].transpose(), delta) * sp
+            delta = np.dot(self.weights[-l+1].transpose(), delta) * sp##这里也是矩阵，是该隐藏层每个神经元引起的误差，需要前一层的权重乘以误差，同时再更新误差delta
             nabla_b[-l] = delta
-            nabla_w[-l] = np.dot(delta, activations[-l-1].transpose())
+            nabla_w[-l] = np.dot(delta, activations[-l-1].transpose())#乘以下一层的activation更新这一层的权重
         return (nabla_b, nabla_w)
 
     def accuracy(self, data, convert=False):
