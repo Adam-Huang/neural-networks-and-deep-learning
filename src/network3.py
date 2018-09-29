@@ -42,7 +42,7 @@ import theano.tensor as T
 from theano.tensor.nnet import conv
 from theano.tensor.nnet import softmax
 from theano.tensor import shared_randomstreams
-from theano.tensor.signal import downsample
+from theano.tensor.signal import pool
 
 # Activation functions for neurons
 def linear(z): return z
@@ -52,7 +52,7 @@ from theano.tensor import tanh
 
 
 #### Constants
-GPU = True
+GPU = False
 if GPU:
     print("Trying to run under a GPU.  If this is not desired, then modify "+\
         "network3.py\nto set the GPU flag to False.")
@@ -74,7 +74,7 @@ def load_data_shared(filename="../data/mnist.pkl.gz"):
 
         """
         shared_x = theano.shared(
-            np.asarray(data[0], dtype=theano.config.floatX), borrow=True)
+            np.asarray(data[0], dtype=theano.config.floatX), borrow=True)##3-1
         shared_y = theano.shared(
             np.asarray(data[1], dtype=theano.config.floatX), borrow=True)
         return shared_x, T.cast(shared_y, "int32")
@@ -111,9 +111,9 @@ class Network(object):
         test_x, test_y = test_data
 
         # compute number of minibatches for training, validation and testing
-        num_training_batches = size(training_data)/mini_batch_size
-        num_validation_batches = size(validation_data)/mini_batch_size
-        num_test_batches = size(test_data)/mini_batch_size
+        num_training_batches = size(training_data)//mini_batch_size
+        num_validation_batches = size(validation_data)//mini_batch_size
+        num_test_batches = size(test_data)//mini_batch_size
 
         # define the (regularized) cost function, symbolic gradients, and updates
         l2_norm_squared = sum([(layer.w**2).sum() for layer in self.layers])
@@ -230,8 +230,7 @@ class ConvPoolLayer(object):
         conv_out = conv.conv2d(
             input=self.inpt, filters=self.w, filter_shape=self.filter_shape,
             image_shape=self.image_shape)
-        pooled_out = downsample.max_pool_2d(
-            input=conv_out, ds=self.poolsize, ignore_border=True)
+        pooled_out = pool.pool_2d(input=conv_out, ds=self.poolsize, ignore_border=True)
         self.output = self.activation_fn(
             pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
         self.output_dropout = self.output # no dropout in the convolutional layers
@@ -255,6 +254,7 @@ class FullyConnectedLayer(object):
                        dtype=theano.config.floatX),
             name='b', borrow=True)
         self.params = [self.w, self.b]
+##loc = mean; scale = sqrt;size = number;variable type is theano.config.floatX
 
     def set_inpt(self, inpt, inpt_dropout, mini_batch_size):
         self.inpt = inpt.reshape((mini_batch_size, self.n_in))
