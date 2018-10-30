@@ -90,8 +90,13 @@ class Network(object):
 
         """
         self.layers = layers
+        # for simplest module:conv + FC + Softmax
+        #layers = [conv,FC,Softmax]  -- three object
+        
         self.mini_batch_size = mini_batch_size
         self.params = [param for layer in self.layers for param in layer.params]
+        # for simplest module:conv + FC + Softmax
+        # params = [28*28,20*24*24,100,10] 
         self.x = T.matrix("x")
         self.y = T.ivector("y")
         init_layer = self.layers[0]
